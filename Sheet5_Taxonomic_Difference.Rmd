@@ -1,0 +1,148 @@
+---
+title: 'Sheet 5: Taxonomic difference'
+author: "Mtro. Ezequiel Ibarra/ Dra. Yalbi Balderas"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## PACKAGE CALL
+
+```{r, include = FALSE} 
+library(ampvis2)
+library(DESeq2)
+library(phyloseq)
+library(ggpubr)
+```
+
+## READ FILES
+
+```{r, include = FALSE} 
+psd5 <- readRDS("objects/Sheet3/psd5.rds")
+```
+
+
+## PREPARATION OF METADATA FOR DIFFERENTIAL ANALYSIS
+
+```{r}
+obj <- psd5
+t(otu_table(obj)) -> otu_table(obj)
+otutable <- data.frame(OTU = rownames(phyloseq::otu_table(obj)@.Data),
+                       phyloseq::otu_table(obj)@.Data,
+                       phyloseq::tax_table(obj)@.Data,
+                       check.names = FALSE
+)
+metadata <- data.frame(phyloseq::sample_data(obj), 
+                       check.names = FALSE
+)
+otutable$Species = otutable$Genus
+metadata <- metadata[,c("Sample","Treatment","Number","Time","TPH",
+                        "pH","Humidity")]
+Original_name <- row.names(metadata)
+metadata <- cbind(Original_name,metadata)
+av2 <- am <- <- p_load(otutable, metadata)
+```
+
+## RELATIVE ABUNDANCE OF TAXONOMIC LEVELS (TOP/HEATMAP)
+
+```{r, warning = FALSE, fig.align='center'}
+amp_heatmap(av2, 
+            group_by = "Treatment",
+            plot_values = TRUE,
+            tax_show = 10,
+            tax_aggregate = "Kingdom",
+            plot_colorscale = "sqrt",
+            plot_legendbreaks = c(1, 5, 10)) + 
+  theme(legend.text = element_text(face = "italic"))
+amp_heatmap(av2, 
+            group_by = "Treatment",
+            plot_values = TRUE,
+            tax_show = 10,
+            tax_aggregate = "Phylum",
+            plot_colorscale = "sqrt",
+            plot_legendbreaks = c(1, 5, 10)) + 
+  theme(legend.text = element_text(face = "italic"))
+amp_heatmap(av2, 
+            group_by = "Treatment",
+            plot_values = TRUE,
+            tax_show = 10,
+            tax_aggregate = "Class",
+            plot_colorscale = "sqrt",
+            plot_legendbreaks = c(1, 5, 10)) + 
+  theme(legend.text = element_text(face = "italic"))
+amp_heatmap(av2, 
+            group_by = "Treatment",
+            plot_values = TRUE,
+            tax_show = 10,
+            tax_aggregate = "Order",
+            plot_colorscale = "sqrt",
+            plot_legendbreaks = c(1, 5, 10)) + 
+  theme(legend.text = element_text(face = "italic"))
+amp_heatmap(av2, 
+            group_by = "Treatment",
+            plot_values = TRUE,
+            tax_show = 10,
+            tax_aggregate = "Family",
+            plot_colorscale = "sqrt",
+            plot_legendbreaks = c(1, 5, 10)) + 
+  theme(legend.text = element_text(face = "italic"))
+amp_heatmap(av2, 
+            group_by = "Treatment",
+            plot_values = TRUE,
+            tax_show = 10,
+            tax_aggregate = "Genus",
+            plot_colorscale = "sqrt",
+            plot_legendbreaks = c(1, 5, 10)) + 
+  theme(legend.text = element_text(face = "italic"))
+```
+
+
+## VENN DIAGRAM
+
+```{r, warning = FALSE, fig.align='center'}
+amp_venn(av2, group_by = "Treatment", cut_a = 0, cut_f = 50, text_size = 3)
+```
+
+## DIFFERENTIAL ANALYSIS
+
+```{r, warning = FALSE, fig.align='center'}
+diagdds = phyloseq_to_deseq2(psd5, ~Treatment)
+gm_mean = function(x, na.rm=TRUE){
+   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+ }
+geoMeans = apply(counts(diagdds), 1, gm_mean)
+diagdds = estimateSizeFactors(diagdds, geoMeans = geoMeans)
+
+diagdds = DESeq(diagdds, test="Wald", fitType="local")
+
+res = results(diagdds, cooksCutoff = FALSE)
+res = res[order(res$padj, na.last=NA), ]
+
+Treatment <- results(diagdds, contrast=c("Treatment","Bioaugmentation","Control"))
+ 
+alpha = 0.05
+ 
+Treatment = Treatment[order(Treatment$padj, na.last=NA), ]
+ 
+sigtab = Treatment[(Treatment$padj < alpha), ]
+ 
+sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(psd5)[rownames(sigtab), ], "matrix"))
+
+sigtabgen = subset(sigtab, !is.na(Genus))
+# Phylum order
+x = tapply(sigtabgen$log2FoldChange, sigtabgen$Phylum, function(x) max(x))
+x = sort(x, TRUE)
+sigtabgen$Phylum = factor(as.character(sigtabgen$Phylum), levels=names(x))
+# Genus order
+x = tapply(sigtabgen$log2FoldChange, sigtabgen$Species, function(x) max(x))
+x = sort(x, TRUE)
+sigtabgen$Species = factor(as.character(sigtabgen$Species), levels=names(x))
+ggplot(sigtabgen, aes(y=Species, x=log2FoldChange, color=Phylum)) + 
+   geom_vline(xintercept = 0.0, color = "grey", size = 0.5) +
+   geom_point(size=4) + 
+   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5, size = 10), 
+         axis.text.y = element_text(size = 13), 
+         legend.text = element_text(size = 13) )
+ 
+
+wbev
+```

@@ -1,0 +1,15 @@
+Module	Section	Sample Name	Source
+FastQC	all_sections	BA3T07-R1	/home/yalbi/test2/data/Demultiplexed/BA3T07-R1_fastqc.zip
+FastQC	all_sections	LF3T01-R1	/home/yalbi/test2/data/Demultiplexed/LF3T01-R1_fastqc.zip
+FastQC	all_sections	LF3T01-R2	/home/yalbi/test2/data/Demultiplexed/LF3T01-R2_fastqc.zip
+FastQC	all_sections	BA3T07-R2	/home/yalbi/test2/data/Demultiplexed/BA3T07-R2_fastqc.zip
+FastQC	all_sections	LF3T03-R2	/home/yalbi/test2/data/Demultiplexed/LF3T03-R2_fastqc.zip
+FastQC	all_sections	BA3T01-R2	/home/yalbi/test2/data/Demultiplexed/BA3T01-R2_fastqc.zip
+FastQC	all_sections	BA3T01-R1	/home/yalbi/test2/data/Demultiplexed/BA3T01-R1_fastqc.zip
+FastQC	all_sections	LF3T03-R1	/home/yalbi/test2/data/Demultiplexed/LF3T03-R1_fastqc.zip
+FastQC	all_sections	LF3T07-R2	/home/yalbi/test2/data/Demultiplexed/LF3T07-R2_fastqc.zip
+FastQC	all_sections	LF3T07-R1	/home/yalbi/test2/data/Demultiplexed/LF3T07-R1_fastqc.zip
+FastQC	all_sections	BA3T11-R2	/home/yalbi/test2/data/Demultiplexed/BA3T11-R2_fastqc.zip
+FastQC	all_sections	BA3T11-R1	/home/yalbi/test2/data/Demultiplexed/BA3T11-R1_fastqc.zip
+FastQC	all_sections	BA3T03-R1	/home/yalbi/test2/data/Demultiplexed/BA3T03-R1_fastqc.zip
+FastQC	all_sections	BA3T03-R2	/home/yalbi/test2/data/Demultiplexed/BA3T03-R2_fastqc.zip

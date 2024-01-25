@@ -1,0 +1,85 @@
+---
+title: 'Sheet 2: Taxonomic Assignment'
+author: "Mtro. Ezequiel Ibarra / Dra. Yalbi Balderas"
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+## IMPORT PACKAGES
+
+```{r, include = FALSE} 
+library(dada2)
+library(DECIPHER)  
+library(phangorn)
+```
+
+## READ FILES
+
+```{r, include = FALSE} 
+seqtab <- readRDS("objects/Sheet1/seqtab.rds") 
+seqtab.nochim <- readRDS("objects/Sheet1/seqtab.nochim.rds")
+```
+
+## TAXONOMIC ASSIGNMENT
+
+The DADA2 package provides a native implementation of the naive Bayesian classifier method for this purpose. The assignTaxonomy function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least minBoot bootstrap confidence.
+The dada2 package also implements a method to make species level assignments based on exact matching between ASVs and sequenced reference strains. Recent analysis suggests that exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments. 
+
+```{r, include = FALSE}
+#taxa <- assignTaxonomy(seqtab.nochim, "/home/analisis16/silva_database/silva_nr99_v138.1_train_set.fa.gz", multithread=TRUE)
+#taxa <- addSpecies(taxa, "/home/analisis16/silva_database/silva_species_assignment_v138.1.fa.gz")
+
+taxa <- readRDS("objects/Sheet2/taxa.rds")
+
+#  inspect the taxonomic assignments
+taxa.print <- taxa 
+rownames(taxa.print) <- NULL
+head(taxa.print)
+```
+
+## PHYLOGENETIC TREE
+
+Castro lab has also a tutorial: https://www.castrolab.org/teaching/data_analysis/intro-16s.html#dada2
+We can infer a phylogenetic tree using phangorn to make an inference based on Maximum Likelihood
+We infer a starting tree to initialize the Maximum Likelihood (ML) search. We also adjust a nucleotide substitution model to parameterize the rate of change from one nucleotide to another, thus correctly inferring the length of the branches and the topology of the tree.
+
+```{r}
+#seqs <- getSequences(seqtab.nochim)
+#names(seqs) <- seqs
+#alignment <- AlignSeqs(DNAStringSet(seqs), anchor=NA,verbose=FALSE)
+
+alignment <- readRDS("objects/Sheet2/alignment.rds")
+
+#phangAlign <- phyDat(as(alignment, "matrix"), type="DNA")
+phangAlign<- readRDS("objects/Sheet2/phangAlign.rds")
+
+#dm <- dist.ml(phangAlign)
+#treeNJ <- NJ(dm)
+treeNJ <- readRDS("objects/Sheet2/treeNJ.rds")
+
+#fit <- pml(treeNJ, data=phangAlign)
+fit<- readRDS("objects/Sheet2/fit.rds")
+
+#fitGTR <- update(fit, k=4, inv=0.2)
+#fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
+                    #rearrangement = "stochastic", control = pml.control(trace = 0))
+fitGTR<- readRDS("objects/Sheet2/fitGTR.rds")
+```
+
+## METADATA
+
+```{r, include = FALSE}
+samdf <- read.csv("data/Map_file1.csv", header=TRUE, row.names = 1)
+rownames(seqtab.nochim) %in% rownames(samdf)
+```
+
+
+
+
+
+
+
+
+
+
+

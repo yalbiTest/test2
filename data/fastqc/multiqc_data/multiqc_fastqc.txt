@@ -1,0 +1,15 @@
+Sample	adapter_content	Sequences flagged as poor quality	sequence_duplication_levels	avg_sequence_length	Encoding	per_base_sequence_quality	sequence_length_distribution	Sequence length	File type	basic_statistics	per_sequence_gc_content	Total Sequences	per_base_n_content	per_base_sequence_content	overrepresented_sequences	%GC	total_deduplicated_percentage	Filename	per_tile_sequence_quality	per_sequence_quality_scores
+BA3T01-R1	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	64716.0	pass	fail	fail	53.0	8.01965510847	BA3T01-R1.fastq	warn	pass
+BA3T01-R2	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	64716.0	pass	fail	fail	53.0	15.0148340441	BA3T01-R2.fastq	warn	pass
+BA3T03-R1	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	86371.0	pass	fail	fail	53.0	7.26169663429	BA3T03-R1.fastq	warn	pass
+BA3T03-R2	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	86371.0	pass	fail	fail	54.0	14.0637482488	BA3T03-R2.fastq	warn	pass
+BA3T07-R1	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	68128.0	pass	fail	fail	53.0	8.77906294035	BA3T07-R1.fastq	warn	pass
+BA3T07-R2	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	68128.0	pass	fail	fail	54.0	15.1406176609	BA3T07-R2.fastq	warn	pass
+BA3T11-R1	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	83251.0	pass	fail	fail	53.0	7.57108022726	BA3T11-R1.fastq	warn	pass
+BA3T11-R2	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	83251.0	pass	fail	fail	54.0	14.1800098497	BA3T11-R2.fastq	warn	pass
+LF3T01-R1	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	68419.0	pass	fail	fail	54.0	9.28250924451	LF3T01-R1.fastq	warn	pass
+LF3T01-R2	pass	0.0	fail	251.0	Sanger / Illumina 1.9	warn	pass	251.0	Conventional base calls	pass	fail	68419.0	pass	fail	fail	55.0	16.5100337626	LF3T01-R2.fastq	warn	pass
+LF3T03-R1	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	74009.0	pass	fail	fail	54.0	11.2810604116	LF3T03-R1.fastq	warn	pass
+LF3T03-R2	pass	0.0	fail	251.0	Sanger / Illumina 1.9	warn	pass	251.0	Conventional base calls	pass	fail	74009.0	pass	fail	fail	55.0	19.0990284965	LF3T03-R2.fastq	warn	pass
+LF3T07-R1	pass	0.0	fail	251.0	Sanger / Illumina 1.9	pass	pass	251.0	Conventional base calls	pass	fail	83255.0	pass	fail	fail	54.0	9.52615458531	LF3T07-R1.fastq	warn	pass
+LF3T07-R2	pass	0.0	fail	251.0	Sanger / Illumina 1.9	warn	pass	251.0	Conventional base calls	pass	fail	83255.0	pass	fail	fail	55.0	17.5016515525	LF3T07-R2.fastq	warn	pass

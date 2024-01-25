@@ -1,0 +1,176 @@
+---
+title: 'Sheet 4: Diversity analysis'
+author: "Mtro. Ezequiel Ibarra/ Dra. Yalbi Balderas"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## IMPORT PACKAGES
+
+```{r, include = FALSE} 
+library(tidyverse)
+library(plyr)
+library(kableExtra)
+library(xtable)
+library(kableExtra)
+library(phyloseq)
+library(btools)
+library(microbiome)
+library(mia)
+library(ggpubr)
+```
+
+## READ FILES
+
+```{r, include = FALSE} 
+psd5 <- readRDS("objects/Sheet3/psd5.rds")
+```
+
+## PHYLOGENETIC DIVERSITY
+
+```{r}
+alpha_pd <- estimate_pd(psd5)
+data <- cbind(sample_data(psd5), alpha_pd) 
+psd5.anova <- aov(PD ~ Treatment, data) 
+psd5.anova.table <- xtable(psd5.anova)
+psd5.anova.table
+tab <- microbiome::alpha(psd5)
+head(tab)
+```
+
+## STRUCTURE OF MICROBIAL CUMMUNITIES
+
+```{r, include=FALSE}
+tab <- richness(psd5)
+tab <- dominance(psd5, index = "all")
+tab <- rarity(psd5, index = "all")
+tab <- microbiome::coverage(psd5, threshold = 0.5)
+tab <- inequality(psd5)
+tab <- evenness(psd5, "all")
+```
+
+## DIVERSITY INDEXES
+
+```{r, include=FALSE}
+psd5.2 <- prune_taxa(taxa_sums(psd5) > 0, psd5)
+psd5.2_tse <- makeTreeSEFromPhyloseq(psd5.2)
+psd5.2_tse <- estimateDiversity(psd5.2_tse)
+colnames(colData(psd5.2_tse))[8:ncol(colData(psd5.2_tse))]
+```
+
+## RESULTS
+
+```{r, include=FALSE}
+head(psd5.2_tse@colData)
+```
+
+## ALPHA DIVERSITY (SHANNON)
+
+```{r}
+with(psd5.2_tse@colData, shapiro.test(shannon[Treatment == "Bioaugmentation"]))
+with(psd5.2_tse@colData, shapiro.test(shannon[Treatment == "Control"]))
+varianza_shannon <- var.test(shannon ~ Treatment, data = psd5.2_tse@colData)
+varianza_shannon
+psd5.2_df <- as.data.frame(psd5.2_tse@colData)
+pShannon <- ggviolin(psd5.2_df, x = "Treatment", y = "shannon",
+                     add = "boxplot", fill ="Treatment",  palette = c("#F8766D", "#00BF7D","#fdbf6f"), na.rm=T)
+#print(pShannon)
+
+pShannon <- pShannon + stat_compare_means(method = "t.test")
+print(pShannon)
+```
+
+## ALPHA DIVERSITY (SIMPSON)
+
+```{r}
+with(psd5.2_tse@colData, shapiro.test(inverse_simpson[Treatment == "Bioaugmentation"]))
+with(psd5.2_tse@colData, shapiro.test(inverse_simpson[Treatment == "Control"]))
+varianza_simpson <- var.test(inverse_simpson ~ Treatment, data = psd5.2_tse@colData)
+varianza_simpson
+psd5.2_df <- as.data.frame(psd5.2_tse@colData)
+psimpson <- ggviolin(psd5.2_df, x = "Treatment", y = "inverse_simpson",
+                     add = "boxplot", fill = "Treatment", palette = c("#CD5555", "#8FBC8F","#fdbf6f"), na.rm=T)
+print(psimpson)
+
+psimpson <- psimpson + stat_compare_means(method = "t.test")
+print(psimpson)
+```
+
+## BETA DIVERSITY (UNIFRAC)
+
+```{r}
+psd5.mds.unifrac <- ordinate(psd5, method = "MDS", distance = "unifrac")
+evals <- psd5.mds.unifrac$values$Eigenvalues
+pord1 <- plot_ordination(psd5, psd5.mds.unifrac, color = "Treatment") +
+  labs(col = "Treatment") +
+  stat_ellipse(aes(fill = Treatment), geom="polygon",level=0.90,alpha=0.25) +
+  coord_fixed(sqrt(evals[2] / evals[1]))
+pord1 <- pord1 + theme(panel.background = element_rect(fill = "white", colour = "black"))
+pord1
+```
+
+## BETA DIVERSITY (WUNIFRAC)
+
+```{r}
+psd5.mds.unifrac <- ordinate(psd5, method = "MDS", distance = "wunifrac")
+evals <- psd5.mds.unifrac$values$Eigenvalues
+pord2 <- plot_ordination(psd5, psd5.mds.unifrac, color ="Treatment") +
+  stat_ellipse(aes(fill = Treatment), geom="polygon",level=0.90,alpha=0.25) +
+  coord_fixed(sqrt(evals[2] / evals[1]))
+pord2 <- pord2 + theme(panel.background = element_rect(fill = "white", colour = "black"))
+pord2
+```
+
+## RELATIVE ABUNDANCE OF TAXONOMIC LEVELS (TOP)
+
+```{r}
+top20 <- names(sort(taxa_sums(psd5), decreasing=T))[1:10]
+psd5.top20 <- transform_sample_counts(psd5, function(OTU) OTU/sum(OTU))
+psd5.top20 <- prune_taxa(top20, psd5.top20)
+plot_bar(psd5.top20, fill="Kingdom") + facet_wrap(~Treatment, scales="free_x")+
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(x = "Muestras", y = "Abundancia relativa (%)") + 
+  theme(axis.text.x = element_text(angle=70, hjust=1),
+        legend.text = element_text(face = "italic"))
+top20 <- names(sort(taxa_sums(psd5), decreasing=T))[1:10]
+psd5.top20 <- transform_sample_counts(psd5, function(OTU) OTU/sum(OTU))
+psd5.top20 <- prune_taxa(top20, psd5.top20)
+plot_bar(psd5.top20, fill="Phylum") + facet_wrap(~Treatment, scales="free_x")+
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(x = "Muestras", y = "Abundancia relativa (%)") + 
+  theme(axis.text.x = element_text(angle=70, hjust=1),
+        legend.text = element_text(face = "italic"))
+top20 <- names(sort(taxa_sums(psd5), decreasing=T))[1:10]
+psd5.top20 <- transform_sample_counts(psd5, function(OTU) OTU/sum(OTU))
+psd5.top20 <- prune_taxa(top20, psd5.top20)
+plot_bar(psd5.top20, fill="Class") + facet_wrap(~Treatment, scales="free_x")+
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(x = "Muestras", y = "Abundancia relativa (%)") + 
+  theme(axis.text.x = element_text(angle=70, hjust=1),
+        legend.text = element_text(face = "italic"))
+top20 <- names(sort(taxa_sums(psd5), decreasing=T))[1:10]
+psd5.top20 <- transform_sample_counts(psd5, function(OTU) OTU/sum(OTU))
+psd5.top20 <- prune_taxa(top20, psd5.top20)
+plot_bar(psd5.top20, fill="Order") + facet_wrap(~Treatment, scales="free_x")+
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(x = "Muestras", y = "Abundancia relativa (%)") + 
+  theme(axis.text.x = element_text(angle=70, hjust=1),
+        legend.text = element_text(face = "italic"))
+top20 <- names(sort(taxa_sums(psd5), decreasing=T))[1:10]
+psd5.top20 <- transform_sample_counts(psd5, function(OTU) OTU/sum(OTU))
+psd5.top20 <- prune_taxa(top20, psd5.top20)
+plot_bar(psd5.top20, fill="Family") + facet_wrap(~Treatment, scales="free_x")+
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(x = "Muestras", y = "Abundancia relativa (%)") + 
+  theme(axis.text.x = element_text(angle=70, hjust=1),
+        legend.text = element_text(face = "italic"))
+top20 <- names(sort(taxa_sums(psd5), decreasing=T))[1:10]
+psd5.top20 <- transform_sample_counts(psd5, function(OTU) OTU/sum(OTU))
+psd5.top20 <- prune_taxa(top20, psd5.top20)
+plot_bar(psd5.top20, fill="Genus") + facet_wrap(~Treatment, scales="free_x")+
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(x = "Muestras", y = "Abundancia relativa (%)") + 
+  theme(axis.text.x = element_text(angle=70, hjust=1),
+        legend.text = element_text(face = "italic"))
+
+```

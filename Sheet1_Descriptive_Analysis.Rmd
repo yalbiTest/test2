@@ -1,0 +1,215 @@
+---
+title: 'Sheet 1: Descriptive Analysis'
+author: "Mtro. Ezequiel Ibarra / Dra. Yalbi Balderas"                                  
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## IMPORT PACKAGES
+
+We are following DADA2 tutorial: https://benjjneb.github.io/dada2/tutorial.html
+
+```{r, include = FALSE} 
+library(dada2) 
+library(ggpubr)            
+```
+
+## DATA IMPORT                                                     
+
+A huge thank you to Andrés Cumsille Montes for providing us with data that we can use in this workshop. Source: https://zenodo.org/records/6828213    DOI 10.5281/zenodo.6828212
+Original metadata: https://github.com/AndresICM/16S_metabarcoding_phyloseq/blob/main/Map_file.csv
+
+https://github.com/AndresICM/16S-rRNA-Metabarcoding-analysis
+
+Sequences were generated using data from a hydrocarbon bioremediation project. Two treatments were selected for this tutorial, bioaugmentation with Acinetobacter, Pseudomonas and Rhodococcus strains, and a control. Both treatments were inoculated with a high concentration of diesel before the beginning of the experiment and were periodically turned over for aeration. Temperature, pH, total petroleum hydrocarbons (TPH) and other physicochemical parameters were monitored. 
+
+The fundamental question of the experiment was to observe the bacterial communities' changes across the experiment, and evaluate how they change while the TPH concentration decreases. 
+
+BA stands for Bioaugmentation and LF for landfarming, which was the control treatment. Then Txx indicates the time of sampling. T01 is the initial point, T03, T07 and T11 are at the 2nd, 6th and 10th week respectively. The after the - appears an R1 or R2, which correspond to the forward and reverse reads of a sample.
+
+
+```{r}
+miseq_path = "data/Demultiplexed"
+list.files(miseq_path)
+```
+
+## SEQUENCE PREPARATION
+
+The sapply function in R is a **vectorized function** from the apply family that allows iterating over a list or vector without the need for using the for loop, which is known to be slow in R.
+
+**vectorized function** means that it works on arrays or vectors in an efficient way
+
+```{r}
+fnFs <- sort(list.files(miseq_path, pattern="R1.fastq", full.names = TRUE))
+fnRs <- sort(list.files(miseq_path, pattern="R2.fastq", full.names = TRUE))
+sample.names <-  sapply(strsplit(basename(fnFs), "-"), `[`, 1)
+sample.names
+```
+
+## SEQUENCE QUALITY
+
+Check quality profiles of the forward reads.
+
+In gray-scale is a heat map of the frequency of each quality score at each base position. The mean quality score at each position is shown by the green line, and the quartiles of the quality score distribution by the orange lines. 
+
+The forward reads are good quality. We generally advise trimming the last few nucleotides to avoid less well-controlled errors that can arise there. These quality profiles do not suggest that any additional trimming is needed. We will truncate the forward reads at position  182.
+
+```{r, warning = FALSE, fig.align='center'}
+plotQualityProfile(fnFs[1:2])
+```
+
+Check quality profiles of the reverse reads, please do not worry, it is not so bad...
+DADA2 incorporates quality information into its error model which makes the algorithm robust to lower quality sequence.
+Based on these profiles, we will truncate the reverse reads at position 110 where the quality distribution crashes.
+
+
+```{r, warning = FALSE, fig.align='center'}
+plotQualityProfile(fnRs[1:2])
+```
+
+We can aggregate plots into one, to have a summary: 
+
+```{r, warning = FALSE, fig.align='center'}
+Plot_aggregated_fnFs <- plotQualityProfile(fnFs, aggregate=T)
+Plot_aggregated_fnFs <- Plot_aggregated_fnFs  + geom_hline(yintercept = 30, color= "red", linewidth=0.5)
+Plot_aggregated_fnFs + geom_vline(xintercept = 182, color= "red", size=0.5)
+
+Plot_aggregated_fnRs <- plotQualityProfile(fnRs, aggregate=T)
+Plot_aggregated_fnRs <- Plot_aggregated_fnRs  + geom_hline(yintercept = 30, color= "red", linewidth=0.5)
+Plot_aggregated_fnRs + geom_vline(xintercept = 110, color= "red", size=0.5)
+```
+
+## FILTER AND TRIM
+
+Your reads must still overlap after truncation in order to merge them later! The tutorial is using 2x250 V4 sequence data, so the forward and reverse reads almost completely overlap and our trimming can be completely guided by the quality scores. This tutorial have some recommendations: https://astrobiomike.github.io/amplicon/dada2_workflow_ex
+
+Here, the first and third arguments (fnFs and fnRs) are our input files. 
+The second and fourth are the filtered forward and reverse seqs. 
+
+truncLen, reads less than 290 (forward) or 200 (reverse) are discarded. 
+
+maxEE is the quality filtering threshold being applied based on the expected errors (Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))), we want to throw the read away if it is likely to have more than 2 erroneous base calls (we are specifying for both the forward and reverse reads). 
+
+truncQ, is set to 2, reads with quality score less than or equal than this are discarded.
+
+rm.phix removes any reads that match the PhiX bacteriophage genome, which is typically added to Illumina sequencing runs for quality monitoring. 
+
+compress, (TRUE) fastq files are gzipped 
+multithread, (TRUE) parallelization
+
+```{r}
+# Place filtered files in filtered/ subdirectory
+filtFs <- file.path("~/analisis16s", "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs<- file.path("~/analisis16s", "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
+parameter1 <- 182
+parameter2 <- 110
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(parameter1,parameter2),
+                     maxEE=c(2,2), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+#out <- readRDS("out.rds")
+out
+```
+A new quality profile
+
+```{r, warning = FALSE, fig.align='center'}
+Plot_aggregated_filtFs <- plotQualityProfile(filtFs, aggregate=T)
+Plot_aggregated_filtFs <- Plot_aggregated_filtFs  + geom_hline(yintercept = 30, color= "red", linewidth=0.5)
+Plot_aggregated_filtFs + geom_vline(xintercept = 182, color= "red", size=0.5)
+
+Plot_aggregated_filtRs <- plotQualityProfile(filtRs, aggregate=T)
+Plot_aggregated_filtRs <- Plot_aggregated_filtRs  + geom_hline(yintercept = 30, color= "red", linewidth=0.5)
+Plot_aggregated_filtRs + geom_vline(xintercept = 110, color= "red", size=0.5)
+```
+
+## ERROR RATES
+
+The DADA2 algorithm makes use of a parametric error model (err) and every amplicon dataset has a different set of error rates. The learnErrors method learns this error model from the data, by alternating estimation of the error rates and inference of sample composition until they converge on a jointly consistent solution. As in many machine-learning problems, the algorithm must begin with an initial guess, for which the maximum possible error rates in this data are used (the error rates if only the most abundant sequence is correct and all the rest are errors).
+
+```{r}
+errF <- learnErrors(filtFs, multithread=TRUE)
+#errF <- readRDS("errF.rds")
+errR <- learnErrors(filtRs, multithread=TRUE)
+#errR <- readRDS("errR.rds")
+```
+
+## ERROR RATES GRAPHS
+
+Visualize the estimated error rates
+The error rates for each possible transition (A→C, A→G, …) are shown. The red line is what is expected based on the quality score, the black line represents the estimate, and the black dots represent the observed. You want the observed (black dots) to track well with the estimated (black line)
+
+```{r, warning = FALSE, fig.align='center'}
+plotErrors(errF, nominalQ=TRUE)
+plotErrors(errR, nominalQ=TRUE)
+```
+
+## SAMPLE INFERENCE
+
+We are now ready to apply the core sample inference algorithm to the filtered and trimmed sequence data.
+We obtain the x number of sequence variants inferred from x number of input unique sequences.
+
+```{r}
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+```
+
+## MERGE PAIRED READS
+
+We now merge the forward and reverse reads together to obtain the full denoised sequences. Merging is performed by aligning the denoised forward reads with the reverse-complement of the corresponding denoised reverse reads, and then constructing the merged "contig" sequences. By default, merged sequences are only output if the forward and reverse reads overlap by at least 12 bases, and are identical to each other in the overlap region (but these conditions can be changed via function arguments).
+The mergers object is a list of data.frames from each sample. Each data.frame contains the merged sequence, its abundance, and the indices of the forward and reverse sequence variants that were merged. Paired reads that did not exactly overlap were removed by mergePairs, further reducing spurious output.
+
+```{r}
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+head(mergers[[1]])
+```
+
+## SEQUENCE TABLE
+
+We can now construct an amplicon sequence variant table (ASV) table, a higher-resolution version of the OTU table produced by traditional methods. The sequence table is a matrix with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. This table contains 4028 ASVs. 
+
+```{r}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+#seqtab
+```
+
+## DISTRIBUTION OF SEQUENCE LENGTHS
+
+If some lengths of the merged sequences do not fall within the expected range for this V4 amplicon, you can remove them.
+
+```{r}
+table(nchar(getSequences(seqtab)))
+#seqtab2 <- seqtab[,nchar(colnames(seqtab)) %in% 250:256]
+#table(nchar(getSequences(seqtab2)))
+```
+
+## REMOVE CHIMERAS
+
+The frequency of chimeric sequences varies substantially from dataset to dataset
+Here chimeras make up about 7% of the merged sequence variants, but when we account for the abundances of those variants we see they account for only about 4% of the merged sequence reads.
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim)
+sum(seqtab.nochim)/sum(seqtab)
+```
+
+## TRACK READS
+
+We’ll look at the number of reads that made it through each step in the pipeline:
+
+```{r}
+getN <- function(x) sum(getUniques(x))
+track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
+```
+
+## PRE-PROCESSING SUMMARY
+
+There should no step in which a majority of reads are lost.
+If a majority of reads failed to merge, you may need to revisit the truncLen parameter used in the filtering step and make sure that the truncated reads span your amplicon. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification.
+ 
+```{r}
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names
+track
+```
